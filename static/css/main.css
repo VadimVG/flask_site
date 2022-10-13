@@ -1,0 +1,18 @@
+body {
+    background: rgb(27 32 34);
+    color: #f9f9f9;
+    font-family: Arial;
+    font-size: 12px;
+}
+
+h1 {background: rgb(107 11 11);
+}
+
+.flash {padding: 10px}
+.flash.success {
+    background: green;
+}
+
+.flash.error {
+    background: red;
+}
