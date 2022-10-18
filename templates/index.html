@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Главная страница</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="static/css/main.css">
+    </head>
+    <body>
+    <h1 align="center">Тестовая станица</h1>
+    <h2 align="center">Главная страница</h2>
+    <a href="/login">Вход</a>
+    <a href="/profile">Профиль</a>
+    <a href="/add_post">Добавить статью</a>
+    <a href="/feedback">Обратная связь</a>
+    <a href="/about">О нас</a>
+    <hr>
+    <h3 align="center">Список публикаций пользователей</h3>
+    <p>
+        {% for i in title %}
+            <h4>Название статьи: {{i[1]}}</h4>
+            <h4>Дата добавления: {{i[-1]}}</h4>
+            <a href="/post/{{i[0]}}" class="tap-to-read">Подробнее</a>
+            <hr>
+        {% endfor %}
+    </p>
+    </body>
+</html>
