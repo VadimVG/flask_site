@@ -97,8 +97,8 @@ def del_post(id):
         print('При удалении произошла ошибка')
 
 
-if __name__=='__main__':
-    myapp.run(debug=True)
+#if __name__=='__main__':
+    #myapp.run(debug=True)
 
 
 
