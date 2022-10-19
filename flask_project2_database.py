@@ -21,16 +21,23 @@ base.execute("""CREATE TABLE IF NOT EXISTS feedback(
     );""")
 base.commit()
 
+base.execute("""CREATE TABLE IF NOT EXISTS users(
+    _id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email text NOT NULL,
+    password text NOT NULL,
+    time INTEGER NOT NULL
+    );""")
+base.commit()
+
 #cur.execute('SELECT name FROM sqlite_master') #запрос на получение всех таблиц из базы
 #res=cur.fetchall() #получение выборки
 #print(res)
 
 
-cur.execute('SELECT * FROM feedback') #запрос на получение данных из таблицы
+cur.execute(f"SELECT * FROM users")
 res = cur.fetchall()
 print(res)
-base.close()
-
 if base.close:
     print('БД закрыта')
 else:
