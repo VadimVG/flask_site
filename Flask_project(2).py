@@ -2,10 +2,13 @@ from flask import Flask, render_template, url_for, request, flash, session, redi
 import sqlite3 as sq
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
-#Проект находится в стадии разработки
 myapp = Flask(__name__)
 myapp.config['SECRET_KEY']='jdflAS89121)(*1HJL'
+#login_manager=LoginManager(myapp) #создание экземпляра класса LoginManager и связывание его с приложением myapp
+
+
 @myapp.errorhandler(404) #декоратор, позволяющий обрабатывать ошибки
 def pagenotfound(error):
     return render_template('error_page404.html'), 404
@@ -74,15 +77,26 @@ def reg():
         return render_template('registration.html')
 
 
-@myapp.route('/login', methods=['GET', 'POST']) #ввод логина и пароля
+@myapp.route('/login', methods=['POST', 'GET'])
 def login():
-    if 'userLogged' in session:
-        return redirect(url_for('profile', username=session['userLogged']))
-    elif request.method == 'POST' and request.form['username'] == 'testname' and request.form['psw'] == '12qwe':
-        session['userLogged'] = request.form['username']
-        return redirect(url_for('profile', username=session['userLogged']))
-    else:
-        return render_template('login.html')
+    if request.method=='POST':
+        base_log = sq.connect('myapp_base.db')
+        cur_log = base_log.cursor()
+        cur_log.execute(f"SELECT * FROM users WHERE email LIKE '{request.form['user']}'")
+        log_user=cur_log.fetchall()
+        base_log.close()
+        if len(log_user) > 0 and check_password_hash(log_user[0][3], request.form['psw']):
+            login_user(log_user[0][0])
+            return redirect('profile')
+        else:
+            flash('Неверный логин/пароль или пользователь не зарегистрирован', category='error')
+
+    return render_template('login.html')
+
+
+@myapp.route('/profile')
+def profile():
+    return render_template('profile.html')
 
 
 @myapp.route('/add_post', methods=['GET', 'POST']) #добавление постов
@@ -125,8 +139,8 @@ def del_post(id):
         print('При удалении произошла ошибка')
 
 
-#if __name__=='__main__':
-    #myapp.run(debug=True)
+if __name__=='__main__':
+    myapp.run(debug=True)
 
 
 
