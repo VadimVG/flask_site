@@ -2,16 +2,52 @@ from flask import Flask, render_template, url_for, request, flash, session, redi
 import sqlite3 as sq
 from datetime import date
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user, UserMixin
 
 myapp = Flask(__name__)
 myapp.config['SECRET_KEY']='jdflAS89121)(*1HJL'
-#login_manager=LoginManager(myapp) #создание экземпляра класса LoginManager и связывание его с приложением myapp
-
+login_manager = LoginManager(myapp) #создание экземпляра класса LoginManager и связывание его с приложением myapp
 
 @myapp.errorhandler(404) #декоратор, позволяющий обрабатывать ошибки
 def pagenotfound(error):
     return render_template('error_page404.html'), 404
+
+
+class UserLogin(UserMixin):
+    def fromDB(self, user):
+        base = sq.connect('myapp_base.db')
+        cur = base.cursor()
+        cur.execute(f"SELECT * FROM users WHERE email LIKE '{user}'")
+        user = cur.fetchall()
+        base.close()
+        self.__user = user[0][0]
+        return str(self.__user)
+
+
+@login_manager.user_loader
+def load(user):
+    print('load_user')
+    return UserLogin().fromDB(user[0][2])
+
+@myapp.route('/login', methods=['POST', 'GET'])
+def login():
+    if request.method == 'POST':
+        base_log = sq.connect('myapp_base.db')
+        cur_log = base_log.cursor()
+        cur_log.execute(f"SELECT * FROM users WHERE email LIKE '{request.form['user']}' LIMIT 1")
+        log_user=cur_log.fetchall()
+        base_log.close()
+        if len(log_user) > 0 and check_password_hash(log_user[0][3], request.form['psw']):
+            user = UserLogin().fromDB(log_user[0][2])
+            try:
+                login_user(user)
+            except AttributeError:
+                print('Ошибка в логин юсер')
+            return redirect('profile')
+        else:
+            flash('Неверный логин/пароль или пользователь не зарегистрирован', category='error')
+
+    return render_template('login.html')
 
 
 @myapp.route('/') #главная станица
@@ -53,7 +89,7 @@ def reg():
         rep=cur_rep.fetchall()
         base_rep.close()
         if 0 in rep[0]:
-            if len(request.form['username'])>5 and len(request.form['email'])>5 and '@' in request.form['email'] and len(request.form['psw'])>5 and request.form['psw']==request.form['psw_1']:
+            if len(request.form['username'])>5 and len(request.form['email']) > 5 and '@' in request.form['email'] and len(request.form['psw'])>5 and request.form['psw']==request.form['psw_1']:
                 hash = generate_password_hash(request.form['psw'])
                 today = date.today()
                 base = sq.connect('myapp_base.db')
@@ -77,21 +113,22 @@ def reg():
         return render_template('registration.html')
 
 
-@myapp.route('/login', methods=['POST', 'GET'])
-def login():
-    if request.method=='POST':
-        base_log = sq.connect('myapp_base.db')
-        cur_log = base_log.cursor()
-        cur_log.execute(f"SELECT * FROM users WHERE email LIKE '{request.form['user']}'")
-        log_user=cur_log.fetchall()
-        base_log.close()
-        if len(log_user) > 0 and check_password_hash(log_user[0][3], request.form['psw']):
-            login_user(log_user[0][0])
-            return redirect('profile')
-        else:
-            flash('Неверный логин/пароль или пользователь не зарегистрирован', category='error')
-
-    return render_template('login.html')
+# @myapp.route('/login', methods=['POST', 'GET'])
+# def login():
+#     if request.method == 'POST':
+#         base_log = sq.connect('myapp_base.db')
+#         cur_log = base_log.cursor()
+#         cur_log.execute(f"SELECT * FROM users WHERE email LIKE '{request.form['user']}'")
+#         log_user=cur_log.fetchall()
+#         base_log.close()
+#         if len(log_user) > 0 and check_password_hash(log_user[0][3], request.form['psw']):
+#             user = UserLogin().create_user(str(log_user[0][0]))
+#             login_user(user)
+#             return redirect('profile')
+#         else:
+#             flash('Неверный логин/пароль или пользователь не зарегистрирован', category='error')
+#
+#     return render_template('login.html')
 
 
 @myapp.route('/profile')
@@ -102,7 +139,7 @@ def profile():
 @myapp.route('/add_post', methods=['GET', 'POST']) #добавление постов
 def addPost():
     if request.method == 'POST':
-        if len(request.form['name'])>3 and len(request.form['post'])>5:
+        if len(request.form['name']) > 3 and len(request.form['post']) > 5:
             base = sq.connect('myapp_base.db')
             cur = base.cursor()
             today = date.today()
